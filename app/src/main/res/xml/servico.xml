@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  packageNames: o serviço só enxerga o Instagram. Nada de outros apps chega até ele.
+  flagIncludeNotImportantViews: no modo detetive queremos ver a árvore inteira da tela.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled|typeViewClicked|typeViewLongClicked|typeViewFocused|typeViewSelected|typeViewTextChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/servico_descricao"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="100"
+    android:packageNames="com.instagram.android" />

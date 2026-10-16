@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sem Reels</string>
+    <string name="servico_descricao">Sem Reels só enxerga o Instagram e não tem acesso à internet. Nesta versão de teste ele ainda não bloqueia nada: só grava como as telas do Instagram são montadas, sem os textos e sem as mensagens, quando você toca em Gravar no app.</string>
+</resources>

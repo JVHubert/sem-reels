@@ -1,0 +1,263 @@
+package io.github.jvhubert.semreels
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.content.Intent
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.net.Uri
+import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+
+/**
+ * Uma tela só, montada no código. Versão de teste (Fase 1): liga o serviço, confere a bateria,
+ * grava cada situação no Instagram e manda as gravações.
+ */
+class MainActivity : Activity() {
+    private lateinit var conteudo: LinearLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        conteudo = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(24), dp(20), dp(40))
+        }
+        val rolagem = ScrollView(this).apply {
+            setBackgroundColor(FUNDO)
+            addView(conteudo)
+        }
+        setContentView(rolagem)
+        // Android 15 desenha atrás das barras do sistema: afasta o conteúdo delas.
+        ViewCompat.setOnApplyWindowInsetsListener(rolagem) { v, insets ->
+            val b = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(b.left, b.top, b.right, b.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Voltar para cá encerra a gravação que estava aberta.
+        Detetive.parar()?.let { telas ->
+            val msg = if (telas > 0) "Gravado: $telas telas." else "Nada foi gravado. O serviço está ligado?"
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+        montar()
+    }
+
+    private fun montar() {
+        conteudo.removeAllViews()
+        val ligado = servicoLigado()
+        val bateriaOk = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+        val gravadas = Detetive.gravadas(this)
+
+        texto("Sem Reels", 30f, TEXTO, negrito = true)
+        texto(
+            "Versão de teste: ainda não bloqueia nada. Agora ela só observa o Instagram, para eu " +
+                "aprender como ele é montado por dentro. Nada do que você escreve, nem as mensagens, é gravado.",
+            16f, TEXTO_2, topo = 8,
+        )
+
+        titulo("1. Ligue o serviço", feito = ligado)
+        if (ligado) {
+            texto("Ligado.", 16f, DESTAQUE)
+        } else {
+            texto(
+                "Em Acessibilidade, toque em Apps instalados > Sem Reels e ligue. " +
+                    "Se o Android disser que é uma configuração restrita, toque no segundo botão, depois no menu ⋮ " +
+                    "lá em cima > Permitir configurações restritas, e tente de novo.",
+                16f, TEXTO_2,
+            )
+            botao("Abrir Acessibilidade", principal = true) {
+                abrir(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            botao("Abrir informações do app", principal = false) { abrirInfoDoApp() }
+        }
+
+        titulo("2. Bateria sem restrições", feito = bateriaOk)
+        if (bateriaOk) {
+            texto("Certo. A Samsung não vai fechar o serviço escondido.", 16f, DESTAQUE)
+        } else {
+            texto(
+                "Sem isso, a Samsung fecha o serviço em segundo plano. Em informações do app, " +
+                    "toque em Bateria e marque Sem restrições.",
+                16f, TEXTO_2,
+            )
+            botao("Abrir informações do app", principal = ligado) { abrirInfoDoApp() }
+        }
+
+        titulo("3. Grave cada situação", feito = gravadas.size >= CENARIOS.size)
+        texto(
+            "Toque em Gravar: o Instagram abre. Faça o que está escrito e volte para cá " +
+                "(botão de voltar ou de apps recentes). Cada gravação fecha sozinha em 3 minutos.",
+            16f, TEXTO_2,
+        )
+        CENARIOS.forEachIndexed { i, c -> linhaCenario(i + 1, c, gravadas[c.id]) }
+
+        titulo("4. Me mande as gravações", feito = false)
+        texto(
+            "Toque em Enviar e escolha o Google Drive (salvar em Meu Drive). Depois me avise no chat.",
+            16f, TEXTO_2,
+        )
+        botao("Enviar gravações", principal = gravadas.isNotEmpty()) { enviar() }
+        if (gravadas.isNotEmpty()) {
+            botao("Apagar gravações", principal = false) {
+                AlertDialog.Builder(this)
+                    .setMessage("Apagar todas as gravações?")
+                    .setPositiveButton("Apagar") { _, _ -> Detetive.apagar(this); montar() }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+        }
+
+        val versao = packageManager.getPackageInfo(packageName, 0).versionName
+        texto("Versão $versao", 13f, TEXTO_2, topo = 32)
+    }
+
+    private fun linhaCenario(numero: Int, c: Cenario, telas: Int?) {
+        val caixa = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(SUPERFICIE)
+            }
+        }
+        conteudo.addView(caixa, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+
+        caixa.addView(rotulo("$numero. ${c.titulo}", 17f, TEXTO, negrito = true))
+        caixa.addView(rotulo(c.instrucao, 15f, TEXTO_2).apply { setPadding(0, dp(4), 0, 0) })
+        if (telas != null) {
+            caixa.addView(rotulo("Gravado ($telas telas)", 15f, DESTAQUE).apply { setPadding(0, dp(6), 0, 0) })
+        }
+        caixa.addView(
+            criarBotao(if (telas == null) "Gravar" else "Gravar de novo", principal = telas == null) { gravar(c) },
+            LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) },
+        )
+    }
+
+    private fun gravar(c: Cenario) {
+        if (!servicoLigado()) {
+            AlertDialog.Builder(this)
+                .setMessage("Primeiro ligue o serviço (passo 1). Sem ele não dá para gravar.")
+                .setPositiveButton("Ok", null)
+                .show()
+            return
+        }
+        val abrirInstagram = packageManager.getLaunchIntentForPackage(Detetive.INSTAGRAM)
+        if (abrirInstagram == null) {
+            Toast.makeText(this, "Não achei o Instagram neste celular.", Toast.LENGTH_LONG).show()
+            return
+        }
+        Detetive.comecar(this, c)
+        startActivity(abrirInstagram)
+    }
+
+    private fun enviar() {
+        if (Detetive.gravadas(this).isEmpty()) {
+            Toast.makeText(this, "Ainda não há gravações.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val arquivo = Detetive.juntar(this)
+        val uri = FileProvider.getUriForFile(this, "$packageName.arquivos", arquivo)
+        val envio = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, arquivo.name)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(envio, "Enviar gravações"))
+    }
+
+    private fun servicoLigado(): Boolean {
+        val meu = ComponentName(this, Servico::class.java)
+        val ligados = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+            ?: return false
+        return ligados.split(':').any { ComponentName.unflattenFromString(it) == meu }
+    }
+
+    private fun abrirInfoDoApp() =
+        abrir(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
+
+    private fun abrir(i: Intent) {
+        try {
+            startActivity(i)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, "Não consegui abrir essa tela.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ---- peças da tela ----
+
+    private fun titulo(t: String, feito: Boolean) {
+        texto(if (feito) "$t  ✓" else t, 21f, if (feito) DESTAQUE else TEXTO, negrito = true, topo = 32)
+    }
+
+    private fun texto(t: String, tamanho: Float, cor: Int, negrito: Boolean = false, topo: Int = 6) {
+        conteudo.addView(
+            rotulo(t, tamanho, cor, negrito),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(topo) },
+        )
+    }
+
+    private fun rotulo(t: String, tamanho: Float, cor: Int, negrito: Boolean = false) = TextView(this).apply {
+        text = t
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, tamanho)
+        setTextColor(cor)
+        setLineSpacing(0f, 1.25f)
+        if (negrito) typeface = Typeface.DEFAULT_BOLD
+    }
+
+    private fun botao(t: String, principal: Boolean, acao: () -> Unit) {
+        conteudo.addView(
+            criarBotao(t, principal, acao),
+            LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(12) },
+        )
+    }
+
+    private fun criarBotao(t: String, principal: Boolean, acao: () -> Unit) = Button(this).apply {
+        text = t
+        isAllCaps = false
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        typeface = Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER
+        stateListAnimator = null
+        setTextColor(if (principal) TEXTO_NO_DESTAQUE else TEXTO)
+        background = GradientDrawable().apply {
+            cornerRadius = dp(12).toFloat()
+            if (principal) setColor(DESTAQUE) else {
+                setColor(SUPERFICIE_2)
+                setStroke(dp(1), BORDA)
+            }
+        }
+        setOnClickListener { acao() }
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+    }
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val FUNDO = 0xFF0F1216.toInt()
+        const val SUPERFICIE = 0xFF171B21.toInt()
+        const val SUPERFICIE_2 = 0xFF1F242C.toInt()
+        const val BORDA = 0xFF2E3540.toInt()
+        const val TEXTO = 0xFFE7E5E0.toInt()
+        const val TEXTO_2 = 0xFF9AA1AB.toInt()
+        const val DESTAQUE = 0xFFF0B03F.toInt()
+        const val TEXTO_NO_DESTAQUE = 0xFF1A1408.toInt()
+    }
+}

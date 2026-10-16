@@ -1,0 +1,53 @@
+name: APK
+
+# A cada push na main: roda os testes, compila o APK assinado e publica no release "ultima".
+# Link fixo para baixar: https://github.com/JVHubert/sem-reels/releases/download/ultima/sem-reels.apk
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['README.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Chave de assinatura
+        env:
+          CHAVE_B64: ${{ secrets.CHAVE_B64 }}
+        run: echo "$CHAVE_B64" | base64 -d > "$RUNNER_TEMP/chave.p12"
+
+      - name: Testar e compilar
+        env:
+          CHAVE_ARQUIVO: ${{ runner.temp }}/chave.p12
+          CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
+          CHAVE_ALIAS: semreels
+        run: gradle testReleaseUnitTest assembleRelease --no-daemon --stacktrace
+
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk sem-reels.apk
+          gh release delete ultima --yes --cleanup-tag || true
+          gh release create ultima sem-reels.apk \
+            --title "Sem Reels (versão 0.1.${{ github.run_number }})" \
+            --notes "Baixe sem-reels.apk no celular e instale. Para atualizar, instale por cima."
