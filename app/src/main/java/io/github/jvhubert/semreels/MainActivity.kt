@@ -9,6 +9,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.TypedValue
@@ -17,11 +19,15 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Uma tela só, montada no código: mostra se o bloqueio está ligado, confere a bateria e, escondido
@@ -30,6 +36,8 @@ import androidx.core.view.WindowInsetsCompat
 class MainActivity : Activity() {
     private lateinit var conteudo: LinearLayout
     private var detetiveAberto = false
+    private val mao = Handler(Looper.getMainLooper())
+    private val atualizar = Runnable { montar() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,14 +68,28 @@ class MainActivity : Activity() {
         montar()
     }
 
+    override fun onPause() {
+        mao.removeCallbacks(atualizar)
+        super.onPause()
+    }
+
     private fun montar() {
+        // Durante a pausa, a tela se atualiza sozinha para mostrar quando ela acaba.
+        mao.removeCallbacks(atualizar)
+        if (Config.pausado(this)) mao.postDelayed(atualizar, 15_000)
+
         conteudo.removeAllViews()
         val ligado = servicoLigado()
         val bateriaOk = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
         val gravadas = Detetive.gravadas(this)
 
         texto("Sem Reels", 30f, TEXTO, negrito = true)
-        if (ligado) {
+        val pausado = Config.pausado(this)
+        if (ligado && pausado) {
+            texto("Bloqueio pausado", 24f, TEXTO, negrito = true, topo = 16)
+            texto("Volta sozinho às ${horaFimDaPausa()}.", 16f, TEXTO_2)
+            botao("Voltar a bloquear agora", principal = true) { Config.encerrarPausa(this); montar() }
+        } else if (ligado) {
             texto("Bloqueio ligado", 24f, DESTAQUE, negrito = true, topo = 16)
             texto(
                 "Reels da lupinha, da busca e de hashtags voltam na hora, e a grade de vídeos fica coberta. " +
@@ -107,6 +129,8 @@ class MainActivity : Activity() {
             botao("Abrir informações do app", principal = ligado) { abrirInfoDoApp() }
         }
 
+        configuracoes(pausado)
+
         titulo("Modo detetive", feito = false)
         texto(
             "Só use se o bloqueio falhar depois de uma atualização do Instagram. Ele grava como as telas " +
@@ -144,6 +168,40 @@ class MainActivity : Activity() {
         val versao = packageManager.getPackageInfo(packageName, 0).versionName
         texto("Versão $versao", 13f, TEXTO_2, topo = 32)
     }
+
+    private fun configuracoes(pausado: Boolean) {
+        titulo("Configurações", feito = false)
+        val permitir = Config.permitirPausa(this)
+        val chave = Switch(this).apply {
+            text = "Permitir pausa"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setTextColor(TEXTO)
+            isChecked = permitir
+            setOnCheckedChangeListener { _, marcado -> Config.mudarPermitirPausa(this@MainActivity, marcado); montar() }
+        }
+        conteudo.addView(chave, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(8) })
+        if (!permitir) {
+            texto("Desligada: o app não oferece pausa. Deixe assim se quiser menos tentação.", 15f, TEXTO_2)
+            return
+        }
+        if (pausado) {
+            texto("Pausado até ${horaFimDaPausa()}.", 15f, TEXTO_2)
+            return
+        }
+        texto(
+            "Libera tudo por 15 minutos. Para pausar, segure o botão por 10 segundos.",
+            15f, TEXTO_2,
+        )
+        val segurar = BotaoSegurar(this, "Segure para pausar 15 min", 10_000L) {
+            Config.pausar(this)
+            Toast.makeText(this, "Pausado por 15 minutos.", Toast.LENGTH_SHORT).show()
+            montar()
+        }
+        conteudo.addView(segurar, LinearLayout.LayoutParams(-1, dp(56)).apply { topMargin = dp(12) })
+    }
+
+    private fun horaFimDaPausa(): String =
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(Config.pausaAte(this)))
 
     private fun linhaCenario(numero: Int, c: Cenario, telas: Int?) {
         val caixa = LinearLayout(this).apply {

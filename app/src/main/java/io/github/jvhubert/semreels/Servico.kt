@@ -53,6 +53,10 @@ class Servico : AccessibilityService() {
             return
         }
         if (e.packageName?.toString() != Detetive.INSTAGRAM) return
+        if (Config.pausado(this)) {
+            capa.tirar()
+            return
+        }
         val agora = SystemClock.uptimeMillis()
 
         // Passou para outro Reel dentro do visualizador.
@@ -72,7 +76,7 @@ class Servico : AccessibilityService() {
     }
 
     private fun olhar() {
-        if (!pronto || Detetive.atual != null) return
+        if (!pronto || Detetive.atual != null || Config.pausado(this)) return
         ultimaOlhada = SystemClock.uptimeMillis()
         val tela = montarTela()
         if (tela == null) {
