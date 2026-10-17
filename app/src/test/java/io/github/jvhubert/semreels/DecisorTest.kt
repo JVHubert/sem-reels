@@ -156,17 +156,46 @@ class DecisorTest {
     }
 
     @Test
-    fun reelDeOrigemDesconhecidaVolta() {
-        val d = Decisor(regras)
-        assertEquals(Acao.VOLTAR, d.olhar(tela("clips_viewer_view_pager" to false), 0).acao)
+    fun feedEReconhecidoMesmoSemAAbaMarcada() {
+        // Na gravação do feed, a aba Início não vinha selecionada.
+        assertEquals(Lugar.FEED, gravacao.getValue("feed").last { it.origem != Lugar.DESCONHECIDO }.origem)
+        assertEquals(Lugar.FEED, Decisor(regras).lugar(tela("reels_tray_container" to false)))
     }
 
     @Test
-    fun reelDoFeedVolta() {
+    fun storiesSaoReconhecidos() {
+        assertTrue(gravacao.getValue("aba_reels").any { it.origem == Lugar.STORIES })
+    }
+
+    @Test
+    fun reelDoFeedTocaUmSo() {
         val d = Decisor(regras)
-        d.olhar(tela("feed_tab" to true), 0)
-        assertEquals(Lugar.FEED, d.origem)
-        assertEquals(Acao.VOLTAR, d.olhar(tela("clips_viewer_view_pager" to false), 100).acao)
+        d.olhar(tela("row_feed_profile_header" to false), 0)
+        assertEquals(Acao.NADA, d.olhar(tela("clips_viewer_view_pager" to false), 100).acao)
+        assertEquals(Acao.NADA, d.paginaDoVisualizador(0, 200))
+        assertEquals(Acao.VOLTAR, d.paginaDoVisualizador(1, 3000))
+    }
+
+    @Test
+    fun reelDosStoriesToca() {
+        val d = Decisor(regras)
+        d.olhar(tela("reel_viewer_root" to false), 0)
+        assertEquals(Acao.NADA, d.olhar(tela("clips_viewer_view_pager" to false), 100).acao)
+        assertTrue(d.reelLiberado)
+    }
+
+    @Test
+    fun voltarDaLupinhaParaOFeedLiberaDeNovo() {
+        val d = Decisor(regras)
+        d.olhar(tela("grid_card_layout_container" to false), 0)
+        d.olhar(tela("reels_tray_container" to false), 100)
+        assertEquals(Acao.NADA, d.olhar(tela("clips_viewer_view_pager" to false), 200).acao)
+    }
+
+    @Test
+    fun reelLogoAoAbrirOInstagramToca() {
+        val d = Decisor(regras)
+        assertEquals(Acao.NADA, d.olhar(tela("clips_viewer_view_pager" to false), 0).acao)
     }
 
     @Test

@@ -14,6 +14,10 @@ data class Regras(
     val paginador: String,
     val conversa: List<String>,
     val perfil: List<String>,
+    /** A tela de stories (o Instagram chama de "reel_viewer", mas não são os Reels). */
+    val stories: List<String>,
+    /** Peças do feed: a fileira de stories no topo e o cabeçalho dos posts. */
+    val feed: List<String>,
     /** Cada quadradinho das grades de desconhecidos (lupinha, busca, hashtag). */
     val grade: List<String>,
     /** O que fica acima da grade e precisa continuar tocável (barra de busca, abas do resultado). */
@@ -24,7 +28,7 @@ data class Regras(
 ) {
     /** Todos os ids que o serviço precisa procurar na tela. */
     val todos: Set<String> =
-        (abaReels + abaInicio + abaBusca + visualizador + paginador + conversa + perfil + grade +
+        (abaReels + abaInicio + abaBusca + visualizador + paginador + conversa + perfil + stories + feed + grade +
             topoDaGrade + barraDeAbas + previa).toSet()
 
     companion object {
@@ -40,6 +44,8 @@ data class Regras(
                 paginador = m["paginador"] as? String ?: error("regras.json sem \"paginador\""),
                 conversa = lista("conversa"),
                 perfil = lista("perfil"),
+                stories = lista("stories"),
+                feed = lista("feed"),
                 grade = lista("grade"),
                 topoDaGrade = lista("topoDaGrade"),
                 barraDeAbas = lista("barraDeAbas"),

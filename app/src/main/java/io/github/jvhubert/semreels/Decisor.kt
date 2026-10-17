@@ -2,7 +2,7 @@ package io.github.jvhubert.semreels
 
 enum class Acao { NADA, IR_PARA_INICIO, VOLTAR }
 
-enum class Lugar { CONVERSA, PERFIL, EXPLORAR, FEED, DESCONHECIDO }
+enum class Lugar { CONVERSA, PERFIL, STORIES, EXPLORAR, FEED, DESCONHECIDO }
 
 /** [capa]: área da tela a cobrir (a grade de vídeos), ou null para tirar a capa. */
 data class Resposta(val acao: Acao, val capa: Caixa?)
@@ -11,8 +11,8 @@ data class Resposta(val acao: Acao, val capa: Caixa?)
  * O cérebro do bloqueio, sem nada de Android, para dar para testar no PC com as gravações.
  *
  * - Aba Reels selecionada: vai para o Início.
- * - Reel em tela cheia: só toca se veio de uma conversa ou de um perfil. Nesse caso, passar
- *   para o próximo volta. Vindo de qualquer outro lugar (lupinha, busca, hashtag), volta na hora.
+ * - Reel em tela cheia vindo da lupinha, da busca ou de uma hashtag: volta na hora. De qualquer
+ *   outro lugar (chat, perfil, feed, stories): toca, mas passar para o próximo volta.
  * - Grade de vídeos de desconhecidos: coberta pela capa, que engole os toques.
  * - Prévia do toque longo: se abrir mesmo assim, fecha.
  */
@@ -71,7 +71,7 @@ class Decisor(private val r: Regras) {
         return if (reelLiberado) Acao.NADA else bloquear(agora, Acao.VOLTAR)
     }
 
-    private fun origemLiberada() = origem == Lugar.CONVERSA || origem == Lugar.PERFIL
+    private fun origemLiberada() = origem != Lugar.EXPLORAR
 
     /** Depois de bloquear, espera um pouco antes de bloquear de novo, para não entrar em loop. */
     private fun bloquear(agora: Long, acao: Acao): Acao {
@@ -83,8 +83,10 @@ class Decisor(private val r: Regras) {
     fun lugar(t: Tela): Lugar = when {
         t.algumVisivel(r.conversa) -> Lugar.CONVERSA
         t.algumVisivel(r.perfil) -> Lugar.PERFIL
+        t.algumVisivel(r.stories) -> Lugar.STORIES
         t.algumVisivel(r.grade) || t.algumVisivel(r.topoDaGrade) || t.algumSelecionado(r.abaBusca) -> Lugar.EXPLORAR
-        t.algumSelecionado(r.abaInicio) -> Lugar.FEED
+        // Ao abrir o Instagram, a aba Início às vezes não vem marcada: o feed é reconhecido pelo conteúdo.
+        t.algumSelecionado(r.abaInicio) || t.algumVisivel(r.feed) -> Lugar.FEED
         else -> Lugar.DESCONHECIDO
     }
 

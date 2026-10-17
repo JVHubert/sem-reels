@@ -7,6 +7,8 @@
   "paginador": "clips_viewer_view_pager",
   "conversa": ["thread_view_root", "message_list"],
   "perfil": ["profile_header_container", "profile_tabs_container"],
+  "stories": ["reel_viewer_root"],
+  "feed": ["reels_tray_container", "row_feed_profile_header"],
   "grade": ["grid_card_layout_container"],
   "topoDaGrade": ["explore_action_bar", "search_tab_bar_layout", "action_bar_search_edit_text"],
   "barraDeAbas": ["tab_bar"],

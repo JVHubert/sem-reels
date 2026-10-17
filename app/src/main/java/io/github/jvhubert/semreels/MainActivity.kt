@@ -71,7 +71,7 @@ class MainActivity : Activity() {
             texto("Bloqueio ligado", 24f, DESTAQUE, negrito = true, topo = 16)
             texto(
                 "Reels da lupinha, da busca e de hashtags voltam na hora, e a grade de vídeos fica coberta. " +
-                    "Reels que chegam no chat ou que estão no perfil de alguém tocam normal, um de cada vez: " +
+                    "Reels do chat, do feed, dos stories ou do perfil de alguém tocam normal, um de cada vez: " +
                     "arrastar para o próximo volta.",
                 16f, TEXTO_2,
             )

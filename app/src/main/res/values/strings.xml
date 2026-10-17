@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sem Reels</string>
-    <string name="servico_descricao">Sem Reels só enxerga o Instagram e não tem acesso à internet. Ele cobre a grade de vídeos da lupinha, fecha Reels abertos pela busca e deixa tocar os Reels que chegam no chat ou estão no perfil de alguém.</string>
+    <string name="servico_descricao">Sem Reels só enxerga o Instagram e não tem acesso à internet. Ele cobre a grade de vídeos da lupinha, fecha Reels abertos pela busca e deixa tocar os Reels do chat, do feed, dos stories e dos perfis, um de cada vez.</string>
 </resources>
