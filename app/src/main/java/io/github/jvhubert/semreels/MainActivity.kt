@@ -24,11 +24,12 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 /**
- * Uma tela só, montada no código. Versão de teste (Fase 1): liga o serviço, confere a bateria,
- * grava cada situação no Instagram e manda as gravações.
+ * Uma tela só, montada no código: mostra se o bloqueio está ligado, confere a bateria e, escondido
+ * no fim, guarda o modo detetive (grava cada situação no Instagram e manda as gravações).
  */
 class MainActivity : Activity() {
     private lateinit var conteudo: LinearLayout
+    private var detetiveAberto = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,11 +67,17 @@ class MainActivity : Activity() {
         val gravadas = Detetive.gravadas(this)
 
         texto("Sem Reels", 30f, TEXTO, negrito = true)
-        texto(
-            "Versão de teste: ainda não bloqueia nada. Agora ela só observa o Instagram, para eu " +
-                "aprender como ele é montado por dentro. Nada do que você escreve, nem as mensagens, é gravado.",
-            16f, TEXTO_2, topo = 8,
-        )
+        if (ligado) {
+            texto("Bloqueio ligado", 24f, DESTAQUE, negrito = true, topo = 16)
+            texto(
+                "Reels da lupinha, da busca e de hashtags voltam na hora, e a grade de vídeos fica coberta. " +
+                    "Reels que chegam no chat ou que estão no perfil de alguém tocam normal, um de cada vez: " +
+                    "arrastar para o próximo volta.",
+                16f, TEXTO_2,
+            )
+        } else {
+            texto("Bloqueio desligado", 24f, TEXTO, negrito = true, topo = 16)
+        }
 
         titulo("1. Ligue o serviço", feito = ligado)
         if (ligado) {
@@ -100,7 +107,17 @@ class MainActivity : Activity() {
             botao("Abrir informações do app", principal = ligado) { abrirInfoDoApp() }
         }
 
-        titulo("3. Grave cada situação", feito = gravadas.size >= CENARIOS.size)
+        titulo("Modo detetive", feito = false)
+        texto(
+            "Só use se o bloqueio falhar depois de uma atualização do Instagram. Ele grava como as telas " +
+                "são montadas, sem textos nem mensagens. Durante a gravação o bloqueio fica pausado.",
+            16f, TEXTO_2,
+        )
+        if (!detetiveAberto) {
+            botao("Mostrar o modo detetive", principal = false) { detetiveAberto = true; montar() }
+            texto("Versão ${packageManager.getPackageInfo(packageName, 0).versionName}", 13f, TEXTO_2, topo = 32)
+            return
+        }
         texto(
             "Toque em Gravar: o Instagram abre. Faça o que está escrito e volte para cá " +
                 "(botão de voltar ou de apps recentes). Cada gravação fecha sozinha em 3 minutos.",
@@ -108,10 +125,10 @@ class MainActivity : Activity() {
         )
         CENARIOS.forEachIndexed { i, c -> linhaCenario(i + 1, c, gravadas[c.id]) }
 
-        titulo("4. Me mande as gravações", feito = false)
         texto(
-            "Toque em Enviar e escolha o Google Drive (salvar em Meu Drive). Depois me avise no chat.",
-            16f, TEXTO_2,
+            "Depois, toque em Enviar e mande o arquivo para o computador (Quick Share ou cabo USB), " +
+                "na pasta 99. Input Dump.",
+            16f, TEXTO_2, topo = 16,
         )
         botao("Enviar gravações", principal = gravadas.isNotEmpty()) { enviar() }
         if (gravadas.isNotEmpty()) {

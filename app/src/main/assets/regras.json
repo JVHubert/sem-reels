@@ -1,0 +1,14 @@
+{
+  "comentario": "Nomes internos (ids) das peças da tela do Instagram. Quando o Instagram mudar, ajuste aqui e gere um APK novo. Conferido com a gravação de 16/10/2026 (Instagram 439, Android 16, S24).",
+  "abaReels": ["clips_tab", "tab_clips"],
+  "abaInicio": ["feed_tab"],
+  "abaBusca": ["search_tab"],
+  "visualizador": ["clips_viewer_view_pager", "clips_viewer_container"],
+  "paginador": "clips_viewer_view_pager",
+  "conversa": ["thread_view_root", "message_list"],
+  "perfil": ["profile_header_container", "profile_tabs_container"],
+  "grade": ["grid_card_layout_container"],
+  "topoDaGrade": ["explore_action_bar", "search_tab_bar_layout", "action_bar_search_edit_text"],
+  "barraDeAbas": ["tab_bar"],
+  "previa": ["peek_container"]
+}
