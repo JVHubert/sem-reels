@@ -70,6 +70,25 @@ class MainActivity : Activity() {
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
         }
         montar()
+        // Veio do botão do painel com o serviço desligado: leva direto ao interruptor.
+        if (intent.getBooleanExtra(RELIGAR, false)) {
+            intent.removeExtra(RELIGAR)
+            if (!servicoLigado()) abrirInterruptor()
+        }
+    }
+
+    override fun onNewIntent(novo: Intent) {
+        super.onNewIntent(novo)
+        setIntent(novo)
+    }
+
+    private fun abrirInterruptor() {
+        Toast.makeText(this, "Ligue o interruptor do Sem Reels.", Toast.LENGTH_LONG).show()
+        try {
+            startActivity(Atalho.intentDoInterruptor(this))
+        } catch (_: RuntimeException) {
+            abrir(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
     }
 
     override fun onPause() {
@@ -110,14 +129,13 @@ class MainActivity : Activity() {
             texto("Ligado.", 16f, DESTAQUE)
         } else {
             texto(
-                "Em Acessibilidade, toque em Apps instalados > Sem Reels e ligue. " +
+                "Toque no botão e ligue o interruptor do Sem Reels. Se cair na lista da Acessibilidade, " +
+                    "toque em Apps instalados > Sem Reels. " +
                     "Se o Android disser que é uma configuração restrita, toque no segundo botão, depois no menu ⋮ " +
                     "lá em cima > Permitir configurações restritas, e tente de novo.",
                 16f, TEXTO_2,
             )
-            botao("Abrir Acessibilidade", principal = true) {
-                abrir(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
+            botao("Ligar o Sem Reels", principal = true) { abrirInterruptor() }
             botao("Abrir informações do app", principal = false) { abrirInfoDoApp() }
         }
 
@@ -363,14 +381,17 @@ class MainActivity : Activity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    private companion object {
-        const val FUNDO = 0xFF0F1216.toInt()
-        const val SUPERFICIE = 0xFF171B21.toInt()
-        const val SUPERFICIE_2 = 0xFF1F242C.toInt()
-        const val BORDA = 0xFF2E3540.toInt()
-        const val TEXTO = 0xFFE7E5E0.toInt()
-        const val TEXTO_2 = 0xFF9AA1AB.toInt()
-        const val DESTAQUE = 0xFFF0B03F.toInt()
-        const val TEXTO_NO_DESTAQUE = 0xFF1A1408.toInt()
+    companion object {
+        /** Pedido do botão do painel: abrir o interruptor para religar o serviço. */
+        const val RELIGAR = "religar"
+
+        private const val FUNDO = 0xFF0F1216.toInt()
+        private const val SUPERFICIE = 0xFF171B21.toInt()
+        private const val SUPERFICIE_2 = 0xFF1F242C.toInt()
+        private const val BORDA = 0xFF2E3540.toInt()
+        private const val TEXTO = 0xFFE7E5E0.toInt()
+        private const val TEXTO_2 = 0xFF9AA1AB.toInt()
+        private const val DESTAQUE = 0xFFF0B03F.toInt()
+        private const val TEXTO_NO_DESTAQUE = 0xFF1A1408.toInt()
     }
 }
