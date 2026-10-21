@@ -198,10 +198,18 @@ class MainActivity : Activity() {
         titulo("Banco não abre?", feito = false)
         texto(
             "O Nubank e outros bancos não abrem com o Sem Reels ligado. Use o botão Sem Reels no painel " +
-                "que desce do topo da tela: um toque desliga o bloqueio. Depois do banco, toque nele de novo " +
-                "e ligue o interruptor.",
+                "que desce do topo da tela para desligar e, depois do banco, religar.",
             16f, TEXTO_2,
         )
+        if (Servico.podeMudarSozinho(this)) {
+            texto("Um toque liga, outro desliga. A permissão do computador já está dada.", 16f, DESTAQUE)
+        } else {
+            texto(
+                "Para religar também num toque só, sem aviso, é preciso liberar uma permissão uma vez, " +
+                    "com o celular ligado no computador.",
+                16f, TEXTO_2,
+            )
+        }
         if (Build.VERSION.SDK_INT >= 33) {
             botao("Pôr o botão no painel", principal = false) { pedirBotaoNoPainel() }
         } else {

@@ -293,5 +293,30 @@ class Servico : AccessibilityService() {
                 ?: return false
             return ligados.split(':').any { ComponentName.unflattenFromString(it) == meu }
         }
+
+        /**
+         * Permissão dada uma vez pelo computador (adb): deixa o app ligar e desligar o próprio
+         * serviço, sem passar pela tela da Acessibilidade nem pelo aviso de confirmação.
+         */
+        fun podeMudarSozinho(ctx: Context) =
+            ctx.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        /** Liga ou desliga o serviço escrevendo na lista da Acessibilidade. False se não tem a permissão. */
+        fun mudar(ctx: Context, ligar: Boolean): Boolean {
+            val r = ctx.contentResolver
+            val meu = ComponentName(ctx, Servico::class.java)
+            val outros = (Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "")
+                .split(':')
+                .filter { it.isNotBlank() && ComponentName.unflattenFromString(it) != meu }
+            val lista = if (ligar) outros + meu.flattenToString() else outros
+            return try {
+                Settings.Secure.putString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, lista.joinToString(":"))
+                if (ligar) Settings.Secure.putInt(r, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
+                true
+            } catch (_: SecurityException) {
+                false
+            }
+        }
     }
 }

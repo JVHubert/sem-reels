@@ -12,8 +12,8 @@ import android.widget.Toast
 /**
  * Botão "Sem Reels" no painel de atalhos rápidos (o menu que desce do topo da tela).
  * Existe porque apps de banco (Nubank) recusam abrir com um serviço de Acessibilidade de fora da
- * Play Store ligado. Ligado: um toque desliga o serviço de verdade. Desligado: abre direto a tela
- * com o interruptor do Sem Reels, porque o Android não deixa um app religar a própria Acessibilidade.
+ * Play Store ligado. Com a permissão dada pelo computador ([Servico.podeMudarSozinho]), um toque liga
+ * e desliga. Sem ela, um toque desliga, e para religar o app leva ao interruptor da Acessibilidade.
  */
 class Atalho : TileService() {
 
@@ -24,6 +24,16 @@ class Atalho : TileService() {
 
     override fun onClick() {
         super.onClick()
+        // Com a permissão do computador: liga e desliga num toque só.
+        if (Servico.podeMudarSozinho(this)) {
+            val ligar = !Servico.ligado(this)
+            if (Servico.mudar(this, ligar)) {
+                pintar(ligar)
+                val msg = if (ligar) "Sem Reels ligado." else "Sem Reels desligado. Pode abrir o banco."
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
         val s = Servico.atual
         if (s != null) {
             s.disableSelf()

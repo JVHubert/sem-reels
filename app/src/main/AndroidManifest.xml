@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- De propósito, o app NÃO pede internet: nada sai do celular sem o JV mandar. -->
+
+    <!-- Só vale depois de liberada pelo computador (adb). Deixa o botão do painel ligar e desligar
+         o serviço num toque. Sem ela, o app funciona igual, só que religar passa pela Acessibilidade. -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <!-- Para abrir o Instagram e ler a versão dele. -->
     <queries>
