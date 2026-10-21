@@ -6,6 +6,10 @@
     <!-- Para abrir o Instagram e ler a versão dele. -->
     <queries>
         <package android:name="com.instagram.android" />
+        <!-- Para o botão do painel achar a tela com o interruptor do Sem Reels. -->
+        <intent>
+            <action android:name="android.settings.ACCESSIBILITY_DETAILS_SETTINGS" />
+        </intent>
     </queries>
 
     <application
@@ -37,6 +41,21 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/servico" />
+        </service>
+
+        <!-- Botão no painel de atalhos rápidos: desliga o serviço para abrir o banco (ver Atalho.kt). -->
+        <service
+            android:name=".Atalho"
+            android:exported="true"
+            android:icon="@drawable/ic_atalho"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
         </service>
 
         <!-- Entrega o arquivo de gravações ao "Compartilhar" (Google Drive, e-mail...). -->

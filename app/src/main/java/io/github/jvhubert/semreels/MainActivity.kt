@@ -2,12 +2,15 @@ package io.github.jvhubert.semreels
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.StatusBarManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.Icon
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -22,6 +25,7 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -129,6 +133,8 @@ class MainActivity : Activity() {
             botao("Abrir informações do app", principal = ligado) { abrirInfoDoApp() }
         }
 
+        banco()
+
         configuracoes(pausado)
 
         titulo("Modo detetive", feito = false)
@@ -167,6 +173,43 @@ class MainActivity : Activity() {
 
         val versao = packageManager.getPackageInfo(packageName, 0).versionName
         texto("Versão $versao", 13f, TEXTO_2, topo = 32)
+    }
+
+    /** Nubank e outros bancos não abrem com o serviço ligado: o botão do painel ([Atalho]) resolve rápido. */
+    private fun banco() {
+        titulo("Banco não abre?", feito = false)
+        texto(
+            "O Nubank e outros bancos não abrem com o Sem Reels ligado. Use o botão Sem Reels no painel " +
+                "que desce do topo da tela: um toque desliga o bloqueio. Depois do banco, toque nele de novo " +
+                "e ligue o interruptor.",
+            16f, TEXTO_2,
+        )
+        if (Build.VERSION.SDK_INT >= 33) {
+            botao("Pôr o botão no painel", principal = false) { pedirBotaoNoPainel() }
+        } else {
+            texto(
+                "Para pôr o botão: desça o painel duas vezes, toque no lápis (Editar) e arraste o Sem Reels para cima.",
+                16f, TEXTO_2,
+            )
+        }
+    }
+
+    @RequiresApi(33)
+    private fun pedirBotaoNoPainel() {
+        getSystemService(StatusBarManager::class.java).requestAddTileService(
+            ComponentName(this, Atalho::class.java),
+            "Sem Reels",
+            Icon.createWithResource(this, R.drawable.ic_atalho),
+            mainExecutor,
+        ) { r ->
+            val msg = when (r) {
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> "Pronto. O botão está no painel."
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> "O botão já está no painel."
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> null
+                else -> "Não deu. Desça o painel duas vezes, toque no lápis e arraste o Sem Reels para cima."
+            }
+            if (msg != null) Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun configuracoes(pausado: Boolean) {
@@ -258,12 +301,7 @@ class MainActivity : Activity() {
         startActivity(Intent.createChooser(envio, "Enviar gravações"))
     }
 
-    private fun servicoLigado(): Boolean {
-        val meu = ComponentName(this, Servico::class.java)
-        val ligados = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-            ?: return false
-        return ligados.split(':').any { ComponentName.unflattenFromString(it) == meu }
-    }
+    private fun servicoLigado() = Servico.ligado(this)
 
     private fun abrirInfoDoApp() =
         abrir(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))

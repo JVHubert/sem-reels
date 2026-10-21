@@ -49,5 +49,5 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk sem-reels.apk
           gh release delete ultima --yes --cleanup-tag || true
           gh release create ultima sem-reels.apk \
-            --title "Sem Reels (versão 0.2.${{ github.run_number }})" \
+            --title "Sem Reels (versão 0.3.${{ github.run_number }})" \
             --notes "Baixe sem-reels.apk no celular e instale. Para atualizar, instale por cima."

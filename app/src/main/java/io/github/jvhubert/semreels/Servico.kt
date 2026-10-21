@@ -1,12 +1,15 @@
 package io.github.jvhubert.semreels
 
 import android.accessibilityservice.AccessibilityService
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.graphics.Rect
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
@@ -42,6 +45,8 @@ class Servico : AccessibilityService() {
         decisor = Decisor(regras)
         capa = Capa(this)
         pronto = true
+        atual = this
+        Atalho.atualizar(this)
     }
 
     override fun onAccessibilityEvent(e: AccessibilityEvent) {
@@ -242,10 +247,23 @@ class Servico : AccessibilityService() {
 
     override fun onInterrupt() {}
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        sair()
+        return super.onUnbind(intent)
+    }
+
     override fun onDestroy() {
+        sair()
+        super.onDestroy()
+    }
+
+    /** Desligado pela Acessibilidade ou pelo botão do painel ([Atalho]). */
+    private fun sair() {
         mao.removeCallbacksAndMessages(null)
         if (pronto) capa.tirar()
-        super.onDestroy()
+        pronto = false
+        if (atual === this) atual = null
+        Atalho.atualizar(this)
     }
 
     private fun nomeDoEvento(tipo: Int) = when (tipo) {
@@ -260,7 +278,20 @@ class Servico : AccessibilityService() {
         else -> "evento$tipo"
     }
 
-    private companion object {
-        const val PREFIXO_ID = "com.instagram.android:id/"
+    companion object {
+        private const val PREFIXO_ID = "com.instagram.android:id/"
+
+        /** O serviço rodando agora, para o botão do painel conseguir desligá-lo. */
+        @Volatile
+        var atual: Servico? = null
+            private set
+
+        /** Se o serviço está ligado na Acessibilidade (mesmo que ainda não tenha conectado). */
+        fun ligado(ctx: Context): Boolean {
+            val meu = ComponentName(ctx, Servico::class.java)
+            val ligados = Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+                ?: return false
+            return ligados.split(':').any { ComponentName.unflattenFromString(it) == meu }
+        }
     }
 }
